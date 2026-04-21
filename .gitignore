@@ -1,0 +1,14 @@
+# 1. Ignore everything by default
+*
+
+# 2. Track these file types ONLY in the root directory (notice the /)
+!/*.py
+!/*.jinja
+!/*.sbatch
+
+# 3. Track the data folder and everything inside it
+!data/
+!data/**
+
+# 4. Track the .gitignore file itself
+!.gitignore

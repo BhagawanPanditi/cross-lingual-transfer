@@ -1,0 +1,7 @@
+{% if messages[0]['role'] == 'system' %}{% set start_idx = 1 %}{% set sys = messages[0]['content'] %}{% else %}{% set start_idx = 0 %}{% set sys = '' %}{% endif %}{% if sys %}System: {{ sys }}
+
+{% endif %}{% for message in messages[start_idx:] %}{% if message['role'] == 'user' %}User: {{ message['content'] }}
+
+{% elif message['role'] == 'assistant' %}Assistant: {{ message['content'] }}{{ eos_token }}{% if not loop.last %}
+
+{% endif %}{% endif %}{% endfor %}
