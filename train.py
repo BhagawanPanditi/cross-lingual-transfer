@@ -2,6 +2,8 @@ import os, json, csv, math, pickle, argparse, logging
 from typing import Dict, List
 import torch
 import torch.nn as nn
+import numpy as np
+import random
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 from transformers import (
@@ -44,6 +46,12 @@ args = parser.parse_args()
 
 device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 set_seed(args.seed)
+
+torch.use_deterministic_algorithms(True)
+
+g = torch.Generator()
+g.manual_seed(args.seed)
+
 
 logger.info("=" * 60)
 logger.info("Training Configuration:")
@@ -184,9 +192,10 @@ val_loader = DataLoader(
     MathDataset(val_samples),
     batch_size=args.per_device_batch_size,
     shuffle=False,
-    num_workers=4,
+    num_workers=0,
     pin_memory=True,
     collate_fn=collate_fn,
+    generator=g
 )
 
 # ── language subspace ─────────────────────────────────────────────────────────
@@ -422,9 +431,10 @@ for epoch in tqdm(range(start_epoch, args.num_epochs), desc="Epochs", position=0
         ),
         batch_size=args.per_device_batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True,
         collate_fn=collate_fn,
+        generator=g
     )
     model.train()
     optimizer.zero_grad()  # clear at start of each epoch

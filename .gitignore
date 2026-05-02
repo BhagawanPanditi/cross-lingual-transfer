@@ -10,5 +10,10 @@
 !data/
 !data/**
 
-# 4. Track the .gitignore file itself
+# 4. Track the code in eval folder
+!/eval/
+!/eval/*.py
+!/eval/*.sbatch
+
+# 5. Track the .gitignore file itself
 !.gitignore

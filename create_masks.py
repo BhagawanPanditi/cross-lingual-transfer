@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 TOP_RATE = 0.20
+ACTIVATION_BAR_RATIO = 0.90
 FILTER_RATE = 0.95
-ACTIVATION_BAR_RATIO = 0.95
-WITH_EN = False
+
+WITH_EN = True
 LANGUAGES = ["zh", "ja", "bn", "sw", "ru", "de", "es", "fr", "te", "th"]
 
 if WITH_EN:
@@ -65,71 +66,82 @@ def LAPE():
         final_indice.append(layer_index)
     return final_indice
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 def plot_language_neurons(language_specific_neurons,
-                             languages,
-                             num_layers,
-                             save_path="./lang_plots_best.pdf"):
-    """
-    Plot 10 languages + average in a 2x6 grid.
-    """
+                          languages,
+                          num_layers,
+                          save_path="./lang_plots_best.pdf"):
 
     l_dict = {
-        'bn': 'Bengali', 'de': 'German', 'en': 'English', 'fr': 'French',
-        'ru': 'Russian', 'sw': 'Swahili',
-        'zh': 'Chinese', 'ja': 'Japanese', 'th': 'Thai',
-        'es': 'Spanish', 'te': 'Telugu'
+        'ar': 'Arabic',  'bn': 'Bengali', 'de': 'German',  'en': 'English',
+        'fr': 'French',  'hi': 'Hindi',   'ml': 'Malayalam','ru': 'Russian',
+        'sw': 'Swahili', 'ta': 'Tamil',   'zh': 'Chinese',  'ja': 'Japanese',
+        'th': 'Thai',    'es': 'Spanish', 'te': 'Telugu'
     }
 
-    fig, axs = plt.subplots(2, 6, figsize=(24, 8), constrained_layout=True)
+    fig, axs = plt.subplots(2, 6, figsize=(30, 7), constrained_layout=True)
     axs = axs.flatten()
 
-    # ---- Plot languages ----
+    BAR_COLOR  = '#FF7043'
+    EDGE_COLOR = '#BF360C'
+    AVG_COLOR  = '#424242'
+    AVG_EDGE   = '#212121'
+
+    def style_ax(ax, counts, is_avg=False):
+        ax.set_xlabel('Layer', fontsize=14)
+        ax.set_ylabel('Count' if is_avg else 'Neuron Count', fontsize=14)
+        ax.set_xlim(-1, num_layers)
+        ax.set_xticks([0, 10, 20])
+        ax.set_xticklabels([0, 10, 20], fontsize=14)
+
+        # Compute y-ticks from actual data
+        ymax = max(counts) if max(counts) > 0 else 1
+        ymid = round(ymax / 2)
+        ax.set_ylim(0, ymax * 1.05)
+        ax.set_yticks([0, ymid, round(ymax)])
+        ax.set_yticklabels([0, ymid, round(ymax)], fontsize=14)
+
+        ax.grid(True, axis='y', linestyle='--', alpha=0.5, color='grey')
+        ax.spines[['top', 'right']].set_visible(False)
+
+    # ---- Per-language plots ----
     for i, language in enumerate(languages):
         ax = axs[i]
 
-        if i < len(language_specific_neurons):
-            layerwise_counts = [tensor.numel() for tensor in language_specific_neurons[i]]
-        else:
-            layerwise_counts = [0] * num_layers
+        layerwise_counts = (
+            [tensor.numel() for tensor in language_specific_neurons[i]]
+            if i < len(language_specific_neurons)
+            else [0] * num_layers
+        )
 
         ax.bar(range(len(layerwise_counts)),
                layerwise_counts,
-               color='#FF9800',
-               edgecolor='#5E35B1',
-               linewidth=1.2,
-               alpha=0.9)
+               color=BAR_COLOR, edgecolor=EDGE_COLOR,
+               linewidth=0.8, alpha=1.0)
 
-        ax.set_title(l_dict.get(language, language), fontsize=13, fontweight='bold')
-        ax.set_xlabel('Layer')
-        ax.set_ylabel('Count')
-        ax.grid(True, axis='y', linestyle='--', alpha=0.4)
-        ax.set_xlim(-1, num_layers)
+        ax.set_title(l_dict.get(language, language), fontsize=17, fontweight='bold', pad=5)
+        style_ax(ax, layerwise_counts)
 
     # ---- Average plot ----
     ax_avg = axs[len(languages)]
 
-    all_counts = []
-    for lang_data in language_specific_neurons:
-        if lang_data:
-            all_counts.append([t.numel() for t in lang_data])
-        else:
-            all_counts.append([0] * num_layers)
-
-    avg_counts = np.mean(all_counts, axis=0)
+    all_counts = [
+        [t.numel() for t in lang_data] if lang_data else [0] * num_layers
+        for lang_data in language_specific_neurons
+    ]
+    avg_counts = list(np.mean(all_counts, axis=0))
 
     ax_avg.bar(range(len(avg_counts)),
                avg_counts,
-               color="#607D8B",
-               edgecolor='#263238',
-               linewidth=1.2)
+               color=AVG_COLOR, edgecolor=AVG_EDGE,
+               linewidth=0.8, alpha=1.0)
 
-    ax_avg.set_title("Average", fontsize=13, fontweight='bold')
-    ax_avg.set_xlabel("Layer")
-    ax_avg.set_ylabel("Avg Count")
-    ax_avg.grid(True, axis='y', linestyle='--', alpha=0.4)
-    ax_avg.set_xlim(-1, num_layers)
+    ax_avg.set_title("AVG.", fontsize=17, fontweight='bold', pad=5)
+    style_ax(ax_avg, avg_counts, is_avg=True)
 
-    # ---- Hide extra subplot (12th slot) ----
+    # ---- Hide unused slots ----
     for j in range(len(languages) + 1, len(axs)):
         axs[j].axis('off')
 
@@ -144,7 +156,7 @@ plot_language_neurons(
     language_specific_neurons,
     languages=LANGUAGES,
     num_layers=num_layers,
-    save_path=f"./language_masks/language_specific_neurons_{TOP_RATE*100:.0f}_{FILTER_RATE*100:.0f}_{ACTIVATION_BAR_RATIO*100:.0f}_{int(WITH_EN)}.pdf"
+    save_path=f"./language_masks/language_specific_neurons_{TOP_RATE*100:.0f}_{ACTIVATION_BAR_RATIO*100:.0f}_{FILTER_RATE*100:.0f}_{int(WITH_EN)}.pdf"
 )
 
 print("LENGTH ", len(language_specific_neurons))
@@ -223,7 +235,7 @@ language_union_mask = build_language_union_mask(
     language_specific_neurons,
     hidden_size=hidden_size,
     intermediate_size=intermediate_size_model,
-    save_path=f"./language_masks/language_complement_mask_{TOP_RATE*100:.0f}_{FILTER_RATE*100:.0f}_{ACTIVATION_BAR_RATIO*100:.0f}_{int(WITH_EN)}.pt"
+    save_path=f"./language_masks/language_complement_mask_{TOP_RATE*100:.0f}_{ACTIVATION_BAR_RATIO*100:.0f}_{FILTER_RATE*100:.0f}_{int(WITH_EN)}.pt"
 )
 
 
@@ -327,5 +339,5 @@ lora_masks = build_lora_language_union_mask(
     hidden_size=hidden_size,
     intermediate_size=intermediate_size_model,
     rank=lora_rank,
-    save_path=f"./language_masks/language_lora_complement_mask_{TOP_RATE*100:.0f}_{FILTER_RATE*100:.0f}_{ACTIVATION_BAR_RATIO*100:.0f}_{int(WITH_EN)}.pt"
+    save_path=f"./language_masks/language_lora_complement_mask_{TOP_RATE*100:.0f}_{ACTIVATION_BAR_RATIO*100:.0f}_{FILTER_RATE*100:.0f}_{int(WITH_EN)}.pt"
 )

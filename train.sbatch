@@ -8,21 +8,24 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=40G
 #SBATCH --time=30:00:00
-#SBATCH --output="lambda_0.5.log"
-#SBATCH --error="lambda_0.5.log"
+#SBATCH --output="./logs/lambda_0.05_fixed_seed_999.log"
+#SBATCH --error="./logs/lambda_0.05_fixed_seed_999.log"
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export WANDB_DISABLED=true
 export WANDB_MODE=offline
 export TOKENIZERS_PARALLELISM=false
 export HF_HUB_OFFLINE=1
+RANDOM_SEED=999
+export PYTHONHASHSEED=$RANDOM_SEED
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
 unset PYTHONPATH
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate ml-training-env
 
-REG_LAMBDA=0.5
-OUTPUT_DIR="./outputs/output_lambda_${REG_LAMBDA}"
+REG_LAMBDA=0.05
+OUTPUT_DIR="./outputs/output_lambda_fixed_seed_999_${REG_LAMBDA}"
 mkdir -p "$OUTPUT_DIR"
 
 python train.py \
@@ -43,8 +46,8 @@ python train.py \
     --num_epochs        40 \
     --eval_steps        150 \
     --patience          5 \
-    --seed              42
-    
+    --seed              "$RANDOM_SEED"
+
 conda activate lmeval
 
 python plot_training_curves.py \
