@@ -26,24 +26,15 @@ DATA_DIR="/home/compiling-ganesh/24m0829/forgetting/x_transfer/eval/data"
 
 (
     sleep 5 
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.0_repeat_1" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.0_repeat_2" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.05" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.1" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.15" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.2" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.25" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.3" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
+    CUDA_VISIBLE_DEVICES=0 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_999_0.0" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
+    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_999_0.05" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
 ) &
 
 (
     sleep 35
-    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.35" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.4" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_42_0.45" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_123_0.0" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_999_0.0" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
-    CUDA_VISIBLE_DEVICES=1 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_1234_0.0" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
+    CUDA_VISIBLE_DEVICES=2 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_1234_0.05" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
+    CUDA_VISIBLE_DEVICES=3 python eval_mgsm.py --adapter_path "$ADAPTER_DIR/output_lambda_fixed_seed_123_0.05" --data_dir "$DATA_DIR" --device "cuda:0" --langs en zh ja bn sw ru de es fr te th
 ) &
+wait
 
 wait

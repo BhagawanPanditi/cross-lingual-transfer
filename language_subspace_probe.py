@@ -16,8 +16,6 @@ DATASET_FILE = "language_subspace_probe_data.jsonl"
 LANGUAGE_LIST = ["en", "zh", "ja", "bn", "sw", "ru", "de", "es", "fr", "te", "th"]
 SEED = 42
 MAX_INPUT_LENGTH = 64
-PREF_DATA_DPS = -1
-RANDOM_DPS = False
 BATCH_SIZE = 50
 
 def seed_all(seed: int):
@@ -27,6 +25,7 @@ def seed_all(seed: int):
     torch.manual_seed(seed)
 
 def load_model(model_path: str):
+    # Load tokenizer and model from the local checkpoint.
     tokenizer = AutoTokenizer.from_pretrained(
         model_path,
         model_max_length=512,
@@ -46,12 +45,18 @@ def load_model(model_path: str):
     return model, tokenizer
 
 def build_aligner(rank: int, lan_emb: dict):
+    """Returns the basis of the language specific subspace"""
+
+    # Compute one mean embedding per language.
     lan_mean_emb = {lan: np.mean(emb, axis=0) for lan, emb in lan_emb.items()}
     W = np.stack(list(lan_mean_emb.values())).T
     _, D = W.shape
+
+    # Center the embedding matrix and estimate its low-rank structure.
     wc = W @ np.ones(D) / D
     u, s, vh = np.linalg.svd(W - wc.reshape(-1, 1) @ np.ones((1, D)))
     Ws = u[:, :rank]
+
     Gamma = vh.T[:, :rank] @ np.diag(s[:rank])
     best_fit_W = wc.reshape(-1, 1) @ np.ones((1, D)) + Ws @ Gamma.T
     wc_new = np.linalg.pinv(best_fit_W).T @ np.ones(D)
@@ -61,11 +66,6 @@ def build_aligner(rank: int, lan_emb: dict):
     ws_new = u2[:, :rank]
     return wc_new, ws_new
 
-def projection(emb: torch.Tensor, direction: torch.Tensor) -> torch.Tensor:
-    direction = direction / torch.linalg.norm(direction, dim=1, keepdim=True)
-    proj = torch.matmul(torch.matmul(emb, direction.T), direction)
-    return proj
-
 class Probe:
     def __init__(self, model, tokenizer):
         self.model = model
@@ -73,6 +73,18 @@ class Probe:
         self.data_dir = DATASET_DIR
 
     def _load_data(self) -> dict:
+        """
+        Returns:
+            tokenized: dict[str, BatchEncoding]
+            {
+            "en": {
+                "input_ids": Tensor [N, 64],
+                "attention_mask": Tensor [N, 64]
+            },
+            "zh": {...},
+            ...
+            }
+        """
         filepath = os.path.join(self.data_dir, DATASET_FILE)
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"Dataset not found at: {filepath}")
@@ -83,14 +95,7 @@ class Probe:
                 for lang in LANGUAGE_LIST:
                     text = row.get(lang, "").strip()
                     lang_data[lang].append(text)
-        n = PREF_DATA_DPS
-        if n != -1:
-            total = len(next(iter(lang_data.values())))
-            if RANDOM_DPS:
-                indices = np.random.choice(total, n, replace=False)
-                lang_data = {lang: [texts[i] for i in indices] for lang, texts in lang_data.items()}
-            else:
-                lang_data = {lang: texts[:n] for lang, texts in lang_data.items()}
+
         for lang, texts in lang_data.items():
             logging.info(f"[{lang}] {len(texts)} samples | example: {texts[0][:80]}")
         tokenized = {
@@ -99,7 +104,7 @@ class Probe:
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
-                max_length=MAX_INPUT_LENGTH,
+                max_length=MAX_INPUT_LENGTH, # 64
             )
             for lang, texts in lang_data.items()
         }
@@ -124,8 +129,8 @@ class Probe:
                 )
                 hidden = out.hidden_states
             del out
-            hidden = torch.stack(hidden[1:])
-            sent = hidden[:, :, -1, :]
+            hidden = torch.stack(hidden[1:]) # Stack layers (skip embedding layer) → [L, B, T, H]
+            sent = hidden[:, :, -1, :] # Take last token representation → [L, B, H]
             sent_embs.append(sent.detach().cpu())
             del hidden, sent
             torch.cuda.empty_cache()
@@ -140,12 +145,24 @@ class Probe:
         for lang, data in tqdm(lang_data.items(), desc="Extracting embeddings"):
             logging.info(f"Computing embeddings for [{lang}]")
             source_emb[lang] = self._get_hidden_embeddings(data)
+        """
+            source_emb: dict[str, Tensor]
+            {
+            "en": Tensor [L, N, H],
+            "zh": Tensor [L, N, H],
+            ...
+            }
+            Each language maps to a tensor of hidden states:
+            L = number of layers,
+            N = number of texts,
+            H = hidden size (embedding dimension).
+        """
         num_layers = source_emb["en"].shape[0]
         rank = len(LANGUAGE_LIST) - 1
         preference_matrix = []
         for layer_idx in tqdm(range(num_layers), desc="Building aligners"):
             layer_emb = {lang: emb[layer_idx].numpy() for lang, emb in source_emb.items()}
-            _, aligner = build_aligner(rank, layer_emb)
+            _, aligner = build_aligner(rank, layer_emb) # aligner shape: [H, rank] (language specific subspace basis)
             preference_matrix.append(torch.tensor(aligner.T))
         preference_matrix = torch.stack(preference_matrix, dim=0)
         final_path = os.path.join(self.data_dir, "lang_specific_space_last.pkl")

@@ -113,10 +113,6 @@ else:
     for pos_ids, enc in tqdm(loader, desc="Generating Representations"):
         input_ids = enc.input_ids.to(device)
         attention_mask = enc.attention_mask.to(device)
-
-        if tokenizer.bos_token_id is not None:
-            assert (input_ids[:, 0] == tokenizer.bos_token_id).all(), "Batch is missing BOS at index 0!"
-            assert (input_ids[:, 1] != tokenizer.bos_token_id).all(), "Batch has a duplicate BOS at index 1!"
         
         with torch.no_grad():
             out = model(

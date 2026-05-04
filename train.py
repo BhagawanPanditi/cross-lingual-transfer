@@ -45,10 +45,10 @@ parser.add_argument("--gradient_mask_path",    type=str,   default=None, help="O
 args = parser.parse_args()
 
 device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# For reproducibility: https://docs.pytorch.org/docs/2.11/notes/randomness.html
 set_seed(args.seed)
-
 torch.use_deterministic_algorithms(True)
-
 g = torch.Generator()
 g.manual_seed(args.seed)
 
@@ -202,7 +202,7 @@ val_loader = DataLoader(
 logger.info(f"Loading language subspace from {args.subspace_path}")
 with open(args.subspace_path, "rb") as f:
     lang_space = pickle.load(f)
-lang_space = lang_space[-1].to(device).to(torch.bfloat16)
+lang_space = lang_space[-1].to(device).to(torch.bfloat16) # only need the final subspace (the one from the last layer)
 logger.info(f"lang_space shape: {lang_space.shape}")
 
 # ── gradient masking ──────────────────────────────────────────────────────────
