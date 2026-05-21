@@ -7,15 +7,15 @@ import sys
 sys.stdout.reconfigure(line_buffering=True)
 
 MODEL_PATH  = "./llama3b"
-TRAIN_FILE  = "./data/math_train.jsonl"
+TRAIN_FILE  = "./data/xnli/xnli_train.jsonl"
 OUT_DIR     = "./"
 MAX_SEQ_LEN = 1024
 BATCH_SIZE  = 4
 SEED        = 42
 
 # Define the new output file names
-OUT_JSONL = os.path.join(OUT_DIR, "math_train_modified.jsonl")
-OUT_PT    = os.path.join(OUT_DIR, "math_base_representations.pt")
+OUT_JSONL = os.path.join(OUT_DIR, "xnli_train_modified.jsonl")
+OUT_PT    = os.path.join(OUT_DIR, "xnli_base_representations.pt")
 
 set_seed(SEED); random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
 

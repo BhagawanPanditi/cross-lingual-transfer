@@ -5,11 +5,22 @@ from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 
-TOP_RATE = 0.20
-ACTIVATION_BAR_RATIO = 0.90
-FILTER_RATE = 0.95
+import argparse
 
-WITH_EN = True
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--top_rate", type=float, required=True)
+parser.add_argument("--activation_bar_ratio", type=float, required=True)
+parser.add_argument("--filter_rate", type=float, required=True)
+parser.add_argument("--with_en", type=int, choices=[0, 1], default=1)
+
+args = parser.parse_args()
+
+TOP_RATE = args.top_rate
+ACTIVATION_BAR_RATIO = args.activation_bar_ratio
+FILTER_RATE = args.filter_rate
+WITH_EN = bool(args.with_en)
+
 LANGUAGES = ["zh", "ja", "bn", "sw", "ru", "de", "es", "fr", "te", "th"]
 
 if WITH_EN:

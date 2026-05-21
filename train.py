@@ -40,18 +40,19 @@ parser.add_argument("--max_seq_len",           type=int,   default=1024)
 parser.add_argument("--num_epochs",            type=int,   default=20)
 parser.add_argument("--eval_steps",            type=int,   default=150)
 parser.add_argument("--patience",              type=int,   default=5)
-parser.add_argument("--seed",                  type=int,   default=42)
+parser.add_argument("--model_seed",            type=int,   default=42, help="Seed for LoRA init, dropout, etc.")
+parser.add_argument("--data_seed",             type=int,   default=0, help="Seed for DataLoader shuffle — keep fixed across runs")
 parser.add_argument("--gradient_mask_path",    type=str,   default=None, help="Optional path to gradient masks for LoRA layers")
 args = parser.parse_args()
 
 device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # For reproducibility: https://docs.pytorch.org/docs/2.11/notes/randomness.html
-set_seed(args.seed)
+set_seed(args.model_seed)          # affects LoRA param init, dropout masks
 torch.use_deterministic_algorithms(True)
-g = torch.Generator()
-g.manual_seed(args.seed)
 
+g = torch.Generator()
+g.manual_seed(args.data_seed)      # ONLY controls dataloader shuffle order
 
 logger.info("=" * 60)
 logger.info("Training Configuration:")
